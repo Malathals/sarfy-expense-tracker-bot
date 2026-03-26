@@ -95,7 +95,7 @@ pnpm dev
 | `TELEGRAM_BOT_TOKEN` | From [@BotFather](https://t.me/BotFather) |
 | `TELEGRAM_WEBHOOK_SECRET` | Optional secret to verify webhook requests |
 | `GEMINI_API_KEY` | From [Google AI Studio](https://aistudio.google.com) |
-| `PORT` | Server port (default: 2020) |
+| `PORT` | Server port (default: 3000) |
 | `NODE_ENV` | `development` or `production` |
 | `ALLOWED_ORIGIN` | CORS allowed origin |
 
