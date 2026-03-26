@@ -6,10 +6,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "dev:bot": "tsx watch src/bot/index.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "start:bot": "node dist/bot/index.js"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",

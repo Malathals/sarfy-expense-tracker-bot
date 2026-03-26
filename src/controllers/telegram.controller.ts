@@ -1,17 +1,42 @@
 import type { Request, Response, NextFunction } from 'express';
 import { sendTelegramMessage } from '../utils/telegram.utils';
 import { parseExpenseMessage, parseTransactionMessage, EXPENSE_FORMAT_HINT } from '../utils/expense.utils';
-import { saveExpenseService } from '../services/expense.service';
+import { saveExpenseService, getTodayExpensesService } from '../services/expense.service';
 import logger from '../lib/logger';
 
-// Pending transactions waiting for item name: chatId 
 const pending = new Map<number, { amount: number; provider: string }>();
+
+const handleTodayCommand = async (chatId: number, telegramId: number) => {
+  const { expenses, total } = await getTodayExpensesService(telegramId);
+
+  if (expenses.length === 0) {
+    await sendTelegramMessage(chatId, 'No expenses recorded today.');
+    return;
+  }
+
+  const lines = expenses.map(
+    (e) => `• ${e.item}${e.provider ? ` (${e.provider})` : ''} — ${e.amount} SAR`
+  );
+
+  const message = [
+    `Today's Expenses`,
+    ``,
+    ...lines,
+    ``,
+    `Transactions: ${expenses.length}`,
+    `Total: ${total} SAR`,
+  ].join('\n');
+
+  await sendTelegramMessage(chatId, message);
+  logger.info({ telegramId, total }, '/today command served');
+};
 
 export const webhookHandler = async (req: Request, res: Response, next: NextFunction) => {
   res.sendStatus(200);
 
   try {
     const chatId = req.body?.message?.chat?.id;
+    const telegramId = req.body?.message?.from?.id;
     const messageText = req.body?.message?.text;
 
     if (!chatId || !messageText) {
@@ -19,9 +44,13 @@ export const webhookHandler = async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    logger.info({ chatId, messageText }, 'Telegram message received');
+    logger.info({ chatId, telegramId, messageText }, 'Telegram message received');
 
-    // User is replying with item name for a pending transaction
+    if (messageText === '/today') {
+      await handleTodayCommand(chatId, telegramId);
+      return;
+    }
+
     if (pending.has(chatId)) {
       const { amount, provider } = pending.get(chatId)!;
       pending.delete(chatId);
@@ -35,7 +64,6 @@ export const webhookHandler = async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    // Try parsing as bank transaction
     const transaction = parseTransactionMessage(messageText);
     if (transaction) {
       logger.info({ chatId, ...transaction }, 'Bank transaction detected, awaiting item');
@@ -47,7 +75,6 @@ export const webhookHandler = async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    // Try parsing as manual format: "coffee 18"
     const parsed = parseExpenseMessage(messageText);
     if (!parsed) {
       logger.warn({ chatId, messageText }, 'Unrecognized message format');
