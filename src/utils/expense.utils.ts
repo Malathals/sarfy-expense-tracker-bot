@@ -1,6 +1,11 @@
 export const EXPENSE_FORMAT_HINT =
   'Invalid format. Send: <item> <amount>\nExample: coffee 18\nأو: قهوة 18';
 
+/**
+ * Parses a manual expense message in the format: "<item> <amount>"
+ * Example: "coffee 18" → { item: "coffee", amount: 18 }
+ * Returns null if the format is invalid.
+ */
 export const parseExpenseMessage = (
   message: string
 ): { item: string; amount: number } | null => {
@@ -16,6 +21,12 @@ export const parseExpenseMessage = (
   return { item, amount };
 };
 
+/**
+ * Parses a bank transaction notification message.
+ * Extracts amount from "بـSAR <amount>" and provider from "لـ<provider>".
+ * Example: "بـSAR 250 ... لـHALA" → { amount: 250, provider: "HALA" }
+ * Returns null if the message is not a bank transaction.
+ */
 export const parseTransactionMessage = (
   message: string
 ): { amount: number; provider: string } | null => {

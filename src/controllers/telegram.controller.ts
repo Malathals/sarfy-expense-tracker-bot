@@ -4,15 +4,15 @@ import { parseExpenseMessage, parseTransactionMessage, EXPENSE_FORMAT_HINT } fro
 import { saveExpense } from '../services/expense.service';
 import logger from '../lib/logger';
 
-// Pending transactions waiting for item name: chatId -> { amount, provider }
+// Pending transactions waiting for item name: chatId 
 const pending = new Map<number, { amount: number; provider: string }>();
 
 export const handleWebhook = async (req: Request, res: Response, next: NextFunction) => {
   res.sendStatus(200);
 
   try {
-    const chatId: number = req.body?.message?.chat?.id;
-    const messageText: string = req.body?.message?.text;
+    const chatId = req.body?.message?.chat?.id;
+    const messageText = req.body?.message?.text;
 
     if (!chatId || !messageText) {
       logger.warn('Webhook received with missing chatId or messageText');
