@@ -10,7 +10,8 @@ model Expense {
   id        Int      @id @default(autoincrement())
   item      String
   amount    Float
-  category  String
+  category  String?
   note      String?
+  provider  String?
   createdAt DateTime @default(now())
 }

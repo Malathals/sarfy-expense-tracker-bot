@@ -1,25 +1,21 @@
+import 'dotenv/config';
 import express from 'express';
-import { prisma } from './lib/prisma';
+import router from './routes/index';
+import { errorHandler } from './middleware/errorHandler';
+import logger from './lib/logger';
 
 const app = express();
 const PORT = 2020;
 
+app.use(express.json());
+
 app.get('/', (_req, res) => {
-  console.log('Received request to root endpoint');
   res.send('Telegram Expense Bot API is running');
 });
 
-app.get('/expenses', async (_req, res) => {
-  console.log('Fetching expenses from the database...');
-  const expenses = await prisma.expense.findMany({
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
-
-  res.json(expenses);
-});
+app.use('/api/v1', router);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  logger.info({ port: PORT }, 'Server is running');
 });
