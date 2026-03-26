@@ -1,12 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
-import { prisma } from '../lib/prisma';
 import { parseExpenseMessage } from '../utils/expense.utils';
-import { saveExpense } from '../services/expense.service';
+import { getAllExpensesService, getTodayExpensesService, saveExpenseService } from '../services/expense.service';
 import logger from '../lib/logger';
 
-export const getExpenses = async (_req: Request, res: Response, next: NextFunction) => {
+export const getExpensesHandler = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const expenses = await prisma.expense.findMany({ orderBy: { createdAt: 'desc' } });
+    const expenses = await getAllExpensesService();
     logger.info({ count: expenses.length }, 'Fetched all expenses');
     res.json(expenses);
   } catch (error) {
@@ -14,28 +13,17 @@ export const getExpenses = async (_req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const getTodayExpenses = async (_req: Request, res: Response, next: NextFunction) => {
+export const getTodayExpensesHandler = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const expenses = await prisma.expense.findMany({
-      where: { createdAt: { gte: startOfDay, lte: endOfDay } },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
-    logger.info({ count: expenses.length, total }, "Fetched today's expenses");
-    res.json({ expenses, total });
+    const result = await getTodayExpensesService();
+    logger.info({ count: result.expenses.length, total: result.total }, "Fetched today's expenses");
+    res.json(result);
   } catch (error) {
     next(error);
   }
 };
 
-export const createExpense = async (req: Request, res: Response, next: NextFunction) => {
+export const createExpenseHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { message } = req.body;
 
@@ -50,7 +38,7 @@ export const createExpense = async (req: Request, res: Response, next: NextFunct
       return res.status(400).json({ error: 'Invalid expense format' });
     }
 
-    const expense = await saveExpense(parsed.item, parsed.amount);
+    const expense = await saveExpenseService(parsed.item, parsed.amount);
     logger.info({ item: expense.item, amount: expense.amount }, 'Expense created');
     res.status(201).json(expense);
   } catch (error) {

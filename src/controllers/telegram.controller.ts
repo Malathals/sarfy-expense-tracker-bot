@@ -1,13 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { sendTelegramMessage } from '../utils/telegram.utils';
 import { parseExpenseMessage, parseTransactionMessage, EXPENSE_FORMAT_HINT } from '../utils/expense.utils';
-import { saveExpense } from '../services/expense.service';
+import { saveExpenseService } from '../services/expense.service';
 import logger from '../lib/logger';
 
 // Pending transactions waiting for item name: chatId 
 const pending = new Map<number, { amount: number; provider: string }>();
 
-export const handleWebhook = async (req: Request, res: Response, next: NextFunction) => {
+export const webhookHandler = async (req: Request, res: Response, next: NextFunction) => {
   res.sendStatus(200);
 
   try {
@@ -26,7 +26,7 @@ export const handleWebhook = async (req: Request, res: Response, next: NextFunct
       const { amount, provider } = pending.get(chatId)!;
       pending.delete(chatId);
 
-      const expense = await saveExpense(messageText.trim(), amount, provider);
+      const expense = await saveExpenseService(messageText.trim(), amount, provider);
       logger.info({ chatId, item: expense.item, amount, provider }, 'Pending expense saved');
       await sendTelegramMessage(
         chatId,
@@ -55,7 +55,7 @@ export const handleWebhook = async (req: Request, res: Response, next: NextFunct
       return;
     }
 
-    const expense = await saveExpense(parsed.item, parsed.amount);
+    const expense = await saveExpenseService(parsed.item, parsed.amount);
     logger.info({ chatId, item: expense.item, amount: expense.amount }, 'Manual expense saved');
     await sendTelegramMessage(
       chatId,
