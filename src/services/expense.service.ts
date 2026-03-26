@@ -19,7 +19,7 @@ export const getTodayExpensesService = async (telegramId?: number) => {
     orderBy: { createdAt: 'desc' },
   });
 
-  const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const total = expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
   return { expenses, total };
 };
 

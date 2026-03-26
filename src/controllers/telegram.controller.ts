@@ -15,7 +15,8 @@ const handleTodayCommand = async (chatId: number, telegramId: number) => {
   }
 
   const lines = expenses.map(
-    (e) => `• ${e.item}${e.provider ? ` (${e.provider})` : ''} — ${e.amount} SAR`
+    (e: { item: string; amount: number; provider: string | null }) =>
+      `• ${e.item}${e.provider ? ` (${e.provider})` : ''} — ${e.amount} SAR`
   );
 
   const message = [
