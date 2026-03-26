@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -7,12 +6,13 @@ import router from './routes/index';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import logger from './lib/logger';
+import { env } from './lib/env';
 
 const app = express();
-const PORT = process.env['PORT'] ?? 2020;
+const PORT = env.PORT;
 
 app.use(helmet());
-app.use(cors({ origin: process.env['ALLOWED_ORIGIN'] ?? false }));
+app.use(cors({ origin: env.ALLOWED_ORIGIN ?? false }));
 app.use(compression());
 app.use(express.json({ limit: '10kb' }));
 app.use('/api', apiLimiter);
@@ -25,6 +25,6 @@ app.use('/api/v1', router);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  logger.info({ port: PORT, env: process.env['NODE_ENV'] ?? 'development' }, 'Server started');
+  logger.info({ port: PORT, env: env.NODE_ENV }, 'Server started');
 });
 

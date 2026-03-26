@@ -4,7 +4,7 @@ export const getAllExpensesService = async () => {
   return prisma.expense.findMany({ orderBy: { createdAt: 'desc' } });
 };
 
-export const getTodayExpensesService = async () => {
+export const getTodayExpensesService = async (telegramId?: number) => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
@@ -12,7 +12,10 @@ export const getTodayExpensesService = async () => {
   endOfDay.setHours(23, 59, 59, 999);
 
   const expenses = await prisma.expense.findMany({
-    where: { createdAt: { gte: startOfDay, lte: endOfDay } },
+    where: {
+      createdAt: { gte: startOfDay, lte: endOfDay },
+      ...(telegramId ? { telegramId } : {}),
+    },
     orderBy: { createdAt: 'desc' },
   });
 

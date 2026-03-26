@@ -13,10 +13,11 @@ export const getExpensesHandler = async (_req: Request, res: Response, next: Nex
   }
 };
 
-export const getTodayExpensesHandler = async (_req: Request, res: Response, next: NextFunction) => {
+export const getTodayExpensesHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await getTodayExpensesService();
-    logger.info({ count: result.expenses.length, total: result.total }, "Fetched today's expenses");
+    const telegramId = req.query['telegramId'] ? Number(req.query['telegramId']) : undefined;
+    const result = await getTodayExpensesService(telegramId);
+    logger.info({ telegramId, count: result.expenses.length, total: result.total }, "Fetched today's expenses");
     res.json(result);
   } catch (error) {
     next(error);

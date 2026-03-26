@@ -1,7 +1,8 @@
 import logger from '../lib/logger';
+import { env } from '../lib/env';
 
 export const sendTelegramMessage = async (chatId: number, text: string) => {
-  const token = process.env['TELEGRAM_BOT_TOKEN'];
+  const token = env.TELEGRAM_BOT_TOKEN;
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',

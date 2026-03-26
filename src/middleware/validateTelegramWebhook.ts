@@ -1,8 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import logger from '../lib/logger';
+import { env } from '../lib/env';
 
 export const validateTelegramWebhook = (req: Request, res: Response, next: NextFunction) => {
-  const secret = process.env['TELEGRAM_WEBHOOK_SECRET'];
+  const secret = env.TELEGRAM_WEBHOOK_SECRET;
 
   if (!secret) {
     next();

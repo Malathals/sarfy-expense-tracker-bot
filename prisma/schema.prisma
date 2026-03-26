@@ -12,6 +12,7 @@ model Expense {
   amount    Float
   category  String?
   note      String?
-  provider  String?
+  provider   String?
+  telegramId Int?
   createdAt DateTime @default(now())
 }
