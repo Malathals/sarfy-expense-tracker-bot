@@ -111,6 +111,12 @@ pnpm dev
 
 ## Telegram Usage
 
+**Commands:**
+| Command | Description |
+|---|---|
+| `/today` | Show today's expenses and total |
+| `/total` | Show all-time expenses and total |
+
 **Manual entry:**
 ```
 coffee 18
