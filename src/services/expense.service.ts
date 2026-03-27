@@ -27,6 +27,18 @@ export const getTodayExpensesService = async (telegramId?: number) => {
   return { expenses, total };
 };
 
+export const getTotalExpensesService = async (telegramId: number) => {
+  const result = await prisma.expense.aggregate({
+    where: { telegramId },
+    _sum: { amount: true },
+    _count: true,
+  });
+  const total = result._sum.amount ?? 0;
+  const count = result._count;
+  logger.info({ telegramId, total, count }, 'Fetched total expenses');
+  return { total, count };
+};
+
 export const saveExpenseService = async (
   item: string,
   amount: number,

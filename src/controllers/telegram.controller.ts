@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { sendTelegramMessage } from '../utils/telegram.utils';
 import { parseExpenseMessage, parseTransactionMessage, EXPENSE_FORMAT_HINT } from '../utils/expense.utils';
-import { saveExpenseService, getTodayExpensesService } from '../services/expense.service';
+import { saveExpenseService, getTodayExpensesService, getTotalExpensesService } from '../services/expense.service';
 import logger from '../lib/logger';
 
 const pending = new Map<number, { amount: number; provider: string }>();
@@ -51,6 +51,13 @@ export const webhookHandler = async (req: Request, res: Response, _next: NextFun
 
     if (messageText === '/today') {
       await handleTodayCommand(telegramId);
+      return;
+    }
+
+    if (messageText === '/total') {
+      const { total, count } = await getTotalExpensesService(telegramId);
+      await sendTelegramMessage(telegramId, `Total Expenses\n\nTransactions: ${count}\nTotal: ${total} SAR`);
+      logger.info({ telegramId, total, count }, '/total command served');
       return;
     }
 
