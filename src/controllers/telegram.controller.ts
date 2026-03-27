@@ -6,11 +6,11 @@ import logger from '../lib/logger';
 
 const pending = new Map<number, { amount: number; provider: string }>();
 
-const handleTodayCommand = async (chatId: number, telegramId: number) => {
+const handleTodayCommand = async (telegramId: number) => {
   const { expenses, total } = await getTodayExpensesService(telegramId);
 
   if (expenses.length === 0) {
-    await sendTelegramMessage(chatId, 'No expenses recorded today.');
+    await sendTelegramMessage(telegramId, 'No expenses recorded today.');
     return;
   }
 
@@ -28,7 +28,7 @@ const handleTodayCommand = async (chatId: number, telegramId: number) => {
     `Total: ${total} SAR`,
   ].join('\n');
 
-  await sendTelegramMessage(chatId, message);
+  await sendTelegramMessage(telegramId, message);
   logger.info({ telegramId, total }, '/today command served');
 };
 
@@ -37,61 +37,51 @@ export const webhookHandler = async (req: Request, res: Response, _next: NextFun
   res.sendStatus(200);
 
   try {
-    const chatId = req.body?.message?.chat?.id;
     const telegramId = req.body?.message?.from?.id;
     const messageText = req.body?.message?.text;
 
-    logger.info({ chatId, telegramId, messageText, updateType: Object.keys(req.body ?? {}) }, 'Webhook handler received');
+    logger.info({ telegramId, messageText, updateType: Object.keys(req.body ?? {}) }, 'Webhook handler received');
 
-    if (!chatId || !messageText) {
-      logger.warn({ chatId, telegramId, messageText }, 'Webhook received with missing chatId or messageText');
+    if (!telegramId || !messageText) {
+      logger.warn({ telegramId, messageText }, 'Webhook received with missing telegramId or messageText');
       return;
     }
 
-    logger.info({ chatId, telegramId, messageText }, 'Telegram message received');
+    logger.info({ telegramId, messageText }, 'Telegram message received');
 
     if (messageText === '/today') {
-      await handleTodayCommand(chatId, telegramId);
+      await handleTodayCommand(telegramId);
       return;
     }
 
-    if (pending.has(chatId)) {
-      const { amount, provider } = pending.get(chatId)!;
-      pending.delete(chatId);
+    if (pending.has(telegramId)) {
+      const { amount, provider } = pending.get(telegramId)!;
+      pending.delete(telegramId);
 
-      const expense = await saveExpenseService(messageText.trim(), amount, provider);
-      logger.info({ chatId, item: expense.item, amount, provider }, 'Pending expense saved');
-      await sendTelegramMessage(
-        chatId,
-        `Saved! ${expense.item} — ${expense.amount} SAR at ${expense.provider}`
-      );
+      const expense = await saveExpenseService(messageText.trim(), amount, provider, telegramId);
+      logger.info({ telegramId, item: expense.item, amount, provider }, 'Pending expense saved');
+      await sendTelegramMessage(telegramId, `Saved! ${expense.item} — ${expense.amount} SAR at ${expense.provider}`);
       return;
     }
 
     const transaction = parseTransactionMessage(messageText);
     if (transaction) {
-      logger.info({ chatId, ...transaction }, 'Bank transaction detected, awaiting item');
-      pending.set(chatId, transaction);
-      await sendTelegramMessage(
-        chatId,
-        `Got it! ${transaction.amount} SAR at ${transaction.provider}\nWhat did you buy?`
-      );
+      logger.info({ telegramId, ...transaction }, 'Bank transaction detected, awaiting item');
+      pending.set(telegramId, transaction);
+      await sendTelegramMessage(telegramId, `Got it! ${transaction.amount} SAR at ${transaction.provider}\nWhat did you buy?`);
       return;
     }
 
     const parsed = parseExpenseMessage(messageText);
     if (!parsed) {
-      logger.warn({ chatId, messageText }, 'Unrecognized message format');
-      await sendTelegramMessage(chatId, EXPENSE_FORMAT_HINT);
+      logger.warn({ telegramId, messageText }, 'Unrecognized message format');
+      await sendTelegramMessage(telegramId, EXPENSE_FORMAT_HINT);
       return;
     }
 
-    const expense = await saveExpenseService(parsed.item, parsed.amount);
-    logger.info({ chatId, item: expense.item, amount: expense.amount }, 'Manual expense saved');
-    await sendTelegramMessage(
-      chatId,
-      `Saved! ${expense.item} — ${expense.amount} SAR`
-    );
+    const expense = await saveExpenseService(parsed.item, parsed.amount, undefined, telegramId);
+    logger.info({ telegramId, item: expense.item, amount: expense.amount }, 'Manual expense saved');
+    await sendTelegramMessage(telegramId, `Saved! ${expense.item} — ${expense.amount} SAR`);
   } catch (error) {
     //telegram will retry the same message if we don't respond with 200, so we catch all errors here and log them without throwing
     logger.error({ error }, 'Webhook error');

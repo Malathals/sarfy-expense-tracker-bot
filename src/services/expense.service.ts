@@ -1,7 +1,10 @@
 import { prisma } from '../lib/prisma';
+import logger from '../lib/logger';
 
 export const getAllExpensesService = async () => {
-  return prisma.expense.findMany({ orderBy: { createdAt: 'desc' } });
+  const expenses = await prisma.expense.findMany({ orderBy: { createdAt: 'desc' } });
+  logger.info({ count: expenses.length }, 'Fetched all expenses');
+  return expenses;
 };
 
 export const getTodayExpensesService = async (telegramId?: number) => {
@@ -20,15 +23,19 @@ export const getTodayExpensesService = async (telegramId?: number) => {
   });
 
   const total = expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
+  logger.info({ telegramId, count: expenses.length, total }, "Fetched today's expenses");
   return { expenses, total };
 };
 
 export const saveExpenseService = async (
   item: string,
   amount: number,
-  provider?: string
+  provider?: string,
+  telegramId?: number
 ) => {
-  return prisma.expense.create({
-    data: { item, amount, provider: provider ?? null },
+  const expense = await prisma.expense.create({
+    data: { item, amount, provider: provider ?? null, telegramId: telegramId ?? null },
   });
+  logger.info({ id: expense.id, item, amount, provider, telegramId }, 'Expense saved');
+  return expense;
 };
