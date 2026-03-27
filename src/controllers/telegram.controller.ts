@@ -32,7 +32,8 @@ const handleTodayCommand = async (chatId: number, telegramId: number) => {
   logger.info({ telegramId, total }, '/today command served');
 };
 
-export const webhookHandler = async (req: Request, res: Response, next: NextFunction) => {
+export const webhookHandler = async (req: Request, res: Response, _next: NextFunction) => {
+  // Respond 200 immediately — if Telegram doesn't get a quick response it will retry the same message repeatedly
   res.sendStatus(200);
 
   try {
@@ -40,8 +41,10 @@ export const webhookHandler = async (req: Request, res: Response, next: NextFunc
     const telegramId = req.body?.message?.from?.id;
     const messageText = req.body?.message?.text;
 
+    logger.info({ chatId, telegramId, messageText, updateType: Object.keys(req.body ?? {}) }, 'Webhook handler received');
+
     if (!chatId || !messageText) {
-      logger.warn('Webhook received with missing chatId or messageText');
+      logger.warn({ chatId, telegramId, messageText }, 'Webhook received with missing chatId or messageText');
       return;
     }
 
@@ -90,7 +93,7 @@ export const webhookHandler = async (req: Request, res: Response, next: NextFunc
       `Saved! ${expense.item} — ${expense.amount} SAR`
     );
   } catch (error) {
+    //telegram will retry the same message if we don't respond with 200, so we catch all errors here and log them without throwing
     logger.error({ error }, 'Webhook error');
-    next(error);
   }
 };
