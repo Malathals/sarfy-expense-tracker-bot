@@ -11,6 +11,8 @@ import { env } from './lib/env';
 const app = express();
 const PORT = env.PORT;
 
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors({ origin: env.ALLOWED_ORIGIN ?? false }));
 app.use(compression());
