@@ -23,20 +23,31 @@ export const parseExpenseMessage = (
 
 /**
  * Parses a bank transaction notification message.
- * Extracts amount from "بـSAR <amount>" and provider from "لـ<provider>".
- * Example: "بـSAR 250 ... لـHALA" → { amount: 250, provider: "HALA" }
- * Returns null if the message is not a bank transaction.
+ * Supports two formats:
+ * - Arabic: "بـSAR <amount> ... لـ<provider>"
+ * - English POS: "POS Purchase\nAmount <amount> SAR\nAt <provider>\n..."
+ * Returns null if the message is not a recognized bank transaction.
  */
 export const parseTransactionMessage = (
   message: string
 ): { amount: number; provider: string } | null => {
-  const amountMatch = message.match(/بـSAR\s+([\d.]+)/);
-  const providerMatch = message.match(/لـ(\S+)/);
+  // Arabic bank SMS format
+  const arabicAmountMatch = message.match(/بـSAR\s+([\d.]+)/);
+  const arabicProviderMatch = message.match(/لـ(\S+)/);
+  if (arabicAmountMatch && arabicProviderMatch) {
+    const amount = Number(arabicAmountMatch[1]);
+    if (Number.isNaN(amount) || amount <= 0) return null;
+    return { amount, provider: arabicProviderMatch[1]! };
+  }
 
-  if (!amountMatch || !providerMatch) return null;
+  // English POS format: "Amount 74 SAR" and "At Third Way"
+  const englishAmountMatch = message.match(/Amount\s+([\d.]+)\s+SAR/i);
+  const englishProviderMatch = message.match(/At\s+(.+)/i);
+  if (englishAmountMatch && englishProviderMatch) {
+    const amount = Number(englishAmountMatch[1]);
+    if (Number.isNaN(amount) || amount <= 0) return null;
+    return { amount, provider: englishProviderMatch[1]!.trim() };
+  }
 
-  const amount = Number(amountMatch[1]);
-  if (Number.isNaN(amount) || amount <= 0) return null;
-
-  return { amount, provider: providerMatch[1]! };
+  return null;
 };
