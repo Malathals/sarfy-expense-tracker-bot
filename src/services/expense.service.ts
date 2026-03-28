@@ -27,6 +27,36 @@ export const getTodayExpensesService = async (telegramId?: number) => {
   return { expenses, total };
 };
 
+export const getUsersWithNoExpensesTodayService = async (): Promise<number[]> => {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const allUsers = await prisma.expense.findMany({
+    select: { telegramId: true },
+    distinct: ['telegramId'],
+    where: { telegramId: { not: null } },
+  });
+
+  const activeToday = await prisma.expense.findMany({
+    select: { telegramId: true },
+    distinct: ['telegramId'],
+    where: {
+      telegramId: { not: null },
+      createdAt: { gte: startOfDay, lte: endOfDay },
+    },
+  });
+
+  const inactiveUsers = allUsers
+    .map((e) => e.telegramId as number)
+    .filter((id) => !activeToday.some((e) => e.telegramId === id));
+
+  logger.info({ count: inactiveUsers.length }, 'Users with no expenses today');
+  return inactiveUsers;
+};
+
 export const getTotalExpensesService = async (telegramId: number) => {
   const result = await prisma.expense.aggregate({
     where: { telegramId },

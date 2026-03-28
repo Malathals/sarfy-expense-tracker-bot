@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import logger from './lib/logger';
 import { env } from './lib/env';
+import { startScheduler } from './jobs/scheduler';
 
 const app = express();
 const PORT = env.PORT;
@@ -33,5 +34,7 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   logger.info({ port: PORT, env: env.NODE_ENV }, 'Server started');
+
+  startScheduler();
 });
 
